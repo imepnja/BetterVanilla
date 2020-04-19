@@ -3,41 +3,56 @@ import cv2
 
 
 #Read Image
-img = cv2.imread('texture_pack/assets/minecraft/textures/block/stone.png')
 
 
-def show(window_name):
-    #Show
+#Show
+def show(window_name, image):
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
-    cv2.imshow(window_name, img)
+    cv2.imshow(window_name, image)
     cv2.resizeWindow(window_name, 256, 256)
 
+
+def texturate(scale, alternation, targetfile='textures/block/stone.png'):
+
+    img = cv2.imread(targetfile)
+    img2 = np.zeros((16*scale,16*scale,3), np.uint8)
+
+    for y in range(16):
     
+        for x in range(16):
+    
+            for y2 in range(scale):
+                for x2 in range(scale):
+                    rnd = np.random.randint(low = -alternation, high = alternation)
+                    for c in range(3):
+                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+
 
 
 
 #Processing
 
-img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+scale = 4
 
-pxs = []
+#img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-#for i in range(16*16):
- #   pxs [i]
-show('1')
-print(img[5,5])
 
-""" rnd = np.random.randint(low = -100, high = 100)
-img[5,5,0] = img[5,5,0] + rnd
-img[5,5,1] = img[5,5,1] + rnd
-img[5,5,2] = img[5,5,2] + rnd """
-rnd = np.random.randint(low = -100, high = 100)
-img[5,5,0] = 0
-img[5,5,1] = 0
-img[5,5,2] = 0
+show('1', img)
 
-print(img[5,5])
-show('2')
+alt = 5
+
+
+
+for i in range(20):
+    texturate(4, i)
+
+
+
+        
+
+
+
+show('2', img2)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
