@@ -54,7 +54,6 @@ def Texturate(scale, alternation, images=[]):
         image_x = img.shape[0]
         image_y = img.shape[1]
         image_c = img.shape[2]
-        print(img.shape)
         img2 = np.zeros((image_x*scale,image_y*scale,image_c), np.uint8)
 
         for y in range(image_y):
@@ -94,7 +93,7 @@ def Load(root):
     for r, d, f in os.walk(root):
         for file in f:
             if not '.mcmeta' in file:
-                files.append(os.path.join(r, file))
+                files.append(os.path.join(r, file).replace('\\', '/'))
 
 
 
@@ -118,38 +117,29 @@ def Save(images=[]):
             os.makedirs('new_' + images[i].filepath)
             os.chdir('new_' + images[i].filepath)
         
-        cv2.imwrite(images[i].filename, images[i].img)
+        cv2.imwrite(images[i].filename, images[i].img, [cv2.IMWRITE_PNG_COMPRESSION, 1])
         os.chdir(rootdir)
         # for x in range(len(images[i].filepath.split('/'))):
         #     os.chdir('..')
+
+
 
 
 scale = 2
 alt = 10
 new_images = []
 files = Load('textures')
+print("All files Loaded")
+print("Converting...")
 
+new_images = Texturate(scale, alt, files[:10])
 
+for i in new_images:
+    Show(i.filename, i.img)
 
-
-new_images = Texturate(scale, alt, files)
-
-# for i in new_images:
-#     Show(i.filename, i.img)
-
+print("Saving...")
 Save(new_images)
 
-#for f in files:
- #   new_images.append(Texturate(scale, alt, f))
-    
 
-
-
-###Saving
-# images = Texturate(scale, alt, images)
-# Show(images[0].filename, images[0].img)
-# Show(images[1].filename, images[1].img)
-# Save(images = [stone, oak_planks])
-# 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
