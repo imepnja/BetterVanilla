@@ -11,8 +11,11 @@ from image_obj import Image
 ####################################################################################
 
 def Show(window_name, image):
+    ym =  256* image.shape[0]/image.shape[1]
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     cv2.imshow(window_name, image)
+    x = cv2.getWindowImageRect(window_name)[2]*4
+    y = cv2.getWindowImageRect(window_name)[3]*4
     cv2.resizeWindow(window_name, 256, 256)
 
 
@@ -62,11 +65,17 @@ def Texturate(scale, alternation, images=[]):
                             if img[x,y, 3] != 0: 
                                 rnd = np.random.randint(low = -alternation, high = alternation)
                                 for c in range(3):
-                                    img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+                                    if 0 <= (img[x,y,c] + rnd) <= 255:
+                                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+                                    else:
+                                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c]
                         else:
                             rnd = np.random.randint(low = -alternation, high = alternation)
                             for c in range(3):
-                                img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+                                if 0 <= (img[x,y,c] + rnd) <= 255:
+                                    img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+                                else:
+                                    img2[x*scale+x2, y*scale+y2, c] = img[x,y,c]
         img2_obj = Image(img2, images[i].filename, images[i].filepath)
         newimages.append(img2_obj)
     return newimages    
@@ -84,13 +93,14 @@ def Load(root):
     # r=root, d=directories, f = files
     for r, d, f in os.walk(root):
         for file in f:
-            files.append(os.path.join(r, file))
+            if not '.mcmeta' in file:
+                files.append(os.path.join(r, file))
 
 
 
     for i in range(len(files)):
         images.append(Image(files[i]))
-        # print(str(i) + files[i])
+        print(str(i) + files[i])
     return images
     
 
@@ -99,6 +109,7 @@ def Load(root):
 ####################################################################################
 
 def Save(images=[]):
+    rootdir = os.getcwd()
     for i in range(len(images)):
         print(str(i) + images[i].filename)
         try:
@@ -108,10 +119,9 @@ def Save(images=[]):
             os.chdir('new_' + images[i].filepath)
         
         cv2.imwrite(images[i].filename, images[i].img)
-        for x in range(len(images[i].filepath.split('/'))):
-            os.chdir('..')
-
-
+        os.chdir(rootdir)
+        # for x in range(len(images[i].filepath.split('/'))):
+        #     os.chdir('..')
 
 
 scale = 2
@@ -120,25 +130,12 @@ new_images = []
 files = Load('textures')
 
 
-print(files[669].filename)
-print(files[669].img.shape)
-Show(files[669].filename + '_', files[669].img)
-
-print(files[1658].filename)
-print(files[1658].img.shape)
-Show(files[1658].filename + '_', files[1658].img)
-#print(files[1658].img)
 
 
-imgs = []
-imgs.append(files[669])
-imgs.append(files[1658])
+new_images = Texturate(scale, alt, files)
 
-
-new_images = Texturate(scale, alt, imgs)
-
-for i in new_images:
-    Show(i.filename, i.img)
+# for i in new_images:
+#     Show(i.filename, i.img)
 
 Save(new_images)
 
