@@ -4,6 +4,8 @@ import os
 from image_obj import Image
 
 
+
+
 #Read Image
 
 ####################################################################################
@@ -68,7 +70,12 @@ def Texturate(scale, alternation, images=[]):
                                         img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
                                     else:
                                         img2[x*scale+x2, y*scale+y2, c] = img[x,y,c]
+                                img2[x*scale+x2, y*scale+y2, 3] = img[x,y,3]
+                        
+                        ##For jpgs
+                        
                         else:
+                            
                             rnd = np.random.randint(low = -alternation, high = alternation)
                             for c in range(3):
                                 if 0 <= (img[x,y,c] + rnd) <= 255:
@@ -110,7 +117,7 @@ def Load(root):
 def Save(images=[]):
     rootdir = os.getcwd()
     for i in range(len(images)):
-        print(str(i) + images[i].filename)
+        # print(str(i) + images[i].filename)
         try:
             os.chdir('new_' + images[i].filepath)
         except:
@@ -126,20 +133,18 @@ def Save(images=[]):
 
 
 scale = 2
-alt = 10
+alt = 4
 new_images = []
 files = Load('textures')
 print("All files Loaded")
 print("Converting...")
 
-new_images = Texturate(scale, alt, files[:10])
+new_images = Texturate(scale, alt, files)
 
-for i in new_images:
-    Show(i.filename, i.img)
 
 print("Saving...")
 Save(new_images)
-
+print("Saved")
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
