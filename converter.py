@@ -1,7 +1,9 @@
 import numpy as np
 import cv2
 import os 
+import sys
 from image_obj import Image
+import datetime
 
 
 
@@ -27,64 +29,50 @@ def Show(window_name, image):
 #Texturate randomly
 ####################################################################################
 
-def TexturateSingle(scale, alternation, targetfile='textures/block/stone.png'):
+def Texturate(scale, alternation, image):
+    filename = image.filename
 
-    filename = targetfile.split('/')[2]
-    img = cv2.imread(targetfile)
-    img2 = np.zeros((16*scale,16*scale,3), np.uint8)
+    img = image.img
+    image_x = img.shape[0]
+    image_y = img.shape[1]
+    image_c = img.shape[2]
 
-    for y in range(16):
-        for x in range(16):
-            for y2 in range(scale):
-                for x2 in range(scale):
-                    rnd = np.random.randint(low = -alternation, high = alternation)
-                    for c in range(3):
-                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+    img2 = np.zeros((image_x*scale,image_y*scale,image_c), np.uint8)
 
-    return img2
+    
+    for y in range(image_y):#Img Y cordinate
+        for x in range(image_x):#Img X cordinate
+            for y2 in range(scale):#New (high res) Img Y cordinate
+                for x2 in range(scale): #New (high res) Img X cordinate
+                    
+                    ##Png (alpha chanel)
+                    if image_c == 4:
 
+                        if img[x,y, 3] != 0: #check for alpha chanel
+                            rnd = np.random.randint(low = -alternation, high = alternation) 
 
+                            for c in range(3): #change Color by random
+                                if int(img[x,y,c] + rnd) > 255 or int(img[x,y,c] + rnd) < 0:
+                                    rnd = -rnd
+                                # if 0 <= (img[x,y,c] + rnd) <= 255: # limit to 
+                                img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
 
-
-
-def Texturate(scale, alternation, images=[]):
-    newimages = []
-
-    for i in range(len(images)):
-        filename = images[i].filename
-        img = images[i].img
-        image_x = img.shape[0]
-        image_y = img.shape[1]
-        image_c = img.shape[2]
-        img2 = np.zeros((image_x*scale,image_y*scale,image_c), np.uint8)
-
-        for y in range(image_y):
-            for x in range(image_x):
-                for y2 in range(scale):
-                    for x2 in range(scale):
-                        if image_c == 4:
-                            if img[x,y, 3] != 0: 
-                                rnd = np.random.randint(low = -alternation, high = alternation)
-                                for c in range(3):
-                                    if 0 <= (img[x,y,c] + rnd) <= 255:
-                                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
-                                    else:
-                                        img2[x*scale+x2, y*scale+y2, c] = img[x,y,c]
-                                img2[x*scale+x2, y*scale+y2, 3] = img[x,y,3]
+                            img2[x*scale+x2, y*scale+y2, 3] = img[x,y,3]
+                    
+                    ##For jpgs
+                    else:
                         
-                        ##For jpgs
-                        
-                        else:
-                            
-                            rnd = np.random.randint(low = -alternation, high = alternation)
-                            for c in range(3):
-                                if 0 <= (img[x,y,c] + rnd) <= 255:
-                                    img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
-                                else:
-                                    img2[x*scale+x2, y*scale+y2, c] = img[x,y,c]
-        img2_obj = Image(img2, images[i].filename, images[i].filepath)
-        newimages.append(img2_obj)
-    return newimages    
+                        rnd = np.random.randint(low = -alternation, high = alternation)
+
+                        for c in range(3): #change Color by random
+                                if int(img[x,y,c] + rnd) > 255 or int(img[x,y,c] + rnd) < 0:
+                                    rnd = -rnd
+                                # if 0 <= (img[x,y,c] + rnd) <= 255: # limit to 
+                                img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
+
+    new_image = Image(img2, image.filename, image.filepath)
+    return new_image
+   
 
 
 
@@ -93,20 +81,27 @@ def Texturate(scale, alternation, images=[]):
 #Save Image Files
 ####################################################################################
 
-def Load(root):
+def Load(root, blacklist):
     files = []
     images = []
+
     # r=root, d=directories, f = files
     for r, d, f in os.walk(root):
         for file in f:
             if not '.mcmeta' in file:
-                files.append(os.path.join(r, file).replace('\\', '/'))
+                blacklisted = False
+                for b in blacklist:
+                    if  b in file:
+                        blacklisted = True
+                if not blacklisted:
+                    files.append(os.path.join(r, file).replace('\\', '/'))
+                    
 
 
 
     for i in range(len(files)):
         images.append(Image(files[i]))
-        print(str(i) + files[i])
+        print(str(i) + ' ' + files[i])
     return images
     
 
@@ -124,7 +119,7 @@ def Save(images=[]):
             os.makedirs('new_' + images[i].filepath)
             os.chdir('new_' + images[i].filepath)
         
-        cv2.imwrite(images[i].filename, images[i].img, [cv2.IMWRITE_PNG_COMPRESSION, 1])
+        cv2.imwrite(images[i].filename, images[i].img, [cv2.IMWRITE_PNG_COMPRESSION, 6])
         os.chdir(rootdir)
         # for x in range(len(images[i].filepath.split('/'))):
         #     os.chdir('..')
@@ -133,16 +128,43 @@ def Save(images=[]):
 
 
 scale = 2
-alt = 4
+alt = 6
 new_images = []
-files = Load('textures')
+blacklist = ['concrete.png', 'quartz', 'terracotta', 'debug', '.ini']
+
+#Load all files
+files = Load('textures', blacklist)
+
 print("All files Loaded")
 print("Converting...")
 
-new_images = Texturate(scale, alt, files)
+progress = 0
+toolbar_width = 50
+
+sys.stdout.write("[%s]" % (" " * toolbar_width))
+sys.stdout.flush()
+sys.stdout.write("\b" * (toolbar_width + 1))
+
+start_time = datetime.datetime.now()
 
 
-print("Saving...")
+#Texturate all files
+for i in range(len(files)):
+    new_images.append(Texturate(scale, alt, files[i]))
+    if progress != int(i/len(files)*toolbar_width):
+        progress = int(i/len(files)*toolbar_width)
+        sys.stdout.write("-")
+        
+        
+        
+
+        # print('\033[A\033[FConverting: ' + str(int(i/len(files)*100)) + '%\033[B')
+
+stop_time = datetime.datetime.now()
+
+print("total processing time: " + str(stop_time-start_time))
+
+print("\nSaving...")
 Save(new_images)
 print("Saved")
 
