@@ -2,10 +2,11 @@ import numpy as np
 import cv2
 
 class Image():
-    def __init__(self, targetfile, filename = 'unknown_filename', filepath = ''):
+    def __init__(self, targetfile, lower_alt = '', filename = 'unknown_filename', filepath = ''):
         self.filename = filename
         self.targetfile = targetfile
         self.filepath = filepath
+        self.lower_alt = lower_alt
         
 
         if isinstance(targetfile, str):
@@ -21,5 +22,6 @@ class Image():
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.imshow(window_name, self.img)
         cv2.resizeWindow(window_name, 256, 256)    
+
 
     

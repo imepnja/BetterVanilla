@@ -3,7 +3,11 @@ import cv2
 import os 
 import sys
 from image_obj import Image
+from tqdm import tqdm
+from tqdm import trange
 import datetime
+
+
 
 
 
@@ -39,6 +43,9 @@ def Texturate(scale, alternation, image):
 
     img2 = np.zeros((image_x*scale,image_y*scale,image_c), np.uint8)
 
+    if image.lower_alt != '':
+        alternation = image.lower_alt
+
     
     for y in range(image_y):#Img Y cordinate
         for x in range(image_x):#Img X cordinate
@@ -70,7 +77,7 @@ def Texturate(scale, alternation, image):
                                 # if 0 <= (img[x,y,c] + rnd) <= 255: # limit to 
                                 img2[x*scale+x2, y*scale+y2, c] = img[x,y,c] + rnd
 
-    new_image = Image(img2, image.filename, image.filepath)
+    new_image = Image(img2, '',  image.filename, image.filepath)
     return new_image
    
 
@@ -81,27 +88,29 @@ def Texturate(scale, alternation, image):
 #Save Image Files
 ####################################################################################
 
-def Load(root, blacklist):
-    files = []
+def Load(root, blacklist, lower_textures, lower_alt):
     images = []
 
     # r=root, d=directories, f = files
     for r, d, f in os.walk(root):
-        for file in f:
+        for idx, file in enumerate(f):
             if not '.mcmeta' in file:
                 blacklisted = False
+                is_lower_texture = False
                 for b in blacklist:
                     if  b in file:
                         blacklisted = True
+                for lt in lower_textures:
+                    if  lt in file:
+                        is_lower_texture = True
                 if not blacklisted:
-                    files.append(os.path.join(r, file).replace('\\', '/'))
+                    if is_lower_texture:
+                        images.append(Image(os.path.join(r, file).replace('\\', '/'), lower_alt))
+                    else:
+                        images.append(Image(os.path.join(r, file).replace('\\', '/')))
                     
-
-
-
-    for i in range(len(files)):
-        images.append(Image(files[i]))
-        print(str(i) + ' ' + files[i])
+                    print(str(idx) + ' ' + os.path.join(r, file).replace('\\', '/'))
+                    
     return images
     
 
@@ -127,43 +136,46 @@ def Save(images=[]):
 
 
 
+
+############################
 scale = 2
 alt = 6
-new_images = []
-blacklist = ['concrete.png', 'quartz', 'terracotta', 'debug', '.ini']
+lower_alt = 2
+target_folder = 'test'
+
+blacklist = ['concrete.png', 'debug', '.ini', 'water', 'sun', 'moon']
+lower_textures = ['quartz', 'terracotta',]
+############################
+
+
 
 #Load all files
-files = Load('textures', blacklist)
+files = Load(target_folder, blacklist, lower_textures, lower_alt)
 
-print("All files Loaded")
+print("Loaded %s Files" % int(len(files)))
 print("Converting...")
-
-progress = 0
-toolbar_width = 50
-
-sys.stdout.write("[%s]" % (" " * toolbar_width))
-sys.stdout.flush()
-sys.stdout.write("\b" * (toolbar_width + 1))
-
-start_time = datetime.datetime.now()
 
 
 #Texturate all files
-for i in range(len(files)):
-    new_images.append(Texturate(scale, alt, files[i]))
-    if progress != int(i/len(files)*toolbar_width):
-        progress = int(i/len(files)*toolbar_width)
-        sys.stdout.write("-")
-        
-        
-        
+start_time = datetime.datetime.now()
 
-        # print('\033[A\033[FConverting: ' + str(int(i/len(files)*100)) + '%\033[B')
+new_images = []
+
+
+with trange(len(files)) as t:
+    for i in t:
+        t.set_description(str(i))
+        _reserved_space = 30 
+        _len = len(files[i].filename)
+        t.set_postfix(file=files[i].filename + ("_" * (_reserved_space - _len)), refresh=False)
+        new_images.append(Texturate(scale, alt, files[i]))
+        t.update()
+
 
 stop_time = datetime.datetime.now()
 
-print("total processing time: " + str(stop_time-start_time))
 
+print("\nProcessed %s Files in %s " % (str(len(files)), str(stop_time-start_time)))
 print("\nSaving...")
 Save(new_images)
 print("Saved")
